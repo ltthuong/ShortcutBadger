@@ -81,6 +81,7 @@ object ShortcutBadger {
             if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                 Log.d(LOG_TAG, "Unable to execute badge", e)
             }
+            Log.d("BadgeModule", "Unable to execute badge $e")
             return false
         }
     }
@@ -196,6 +197,7 @@ object ShortcutBadger {
                 if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                     Log.d(LOG_TAG, "Unable to execute badge", e)
                 }
+                Log.d("BadgeModule", "Unable to execute badge $e")
             }
         }
     }
