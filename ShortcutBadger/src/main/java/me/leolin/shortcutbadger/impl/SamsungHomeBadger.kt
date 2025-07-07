@@ -1,85 +1,90 @@
-package me.leolin.shortcutbadger.impl;
+package me.leolin.shortcutbadger.impl
 
-import android.content.ComponentName;
-import android.content.ContentResolver;
-import android.content.ContentValues;
-import android.content.Context;
-import android.database.Cursor;
-import android.net.Uri;
-import android.os.Build;
-
-import java.util.Arrays;
-import java.util.List;
-
-import me.leolin.shortcutbadger.Badger;
-import me.leolin.shortcutbadger.ShortcutBadgeException;
-import me.leolin.shortcutbadger.util.CloseHelper;
+import android.content.ComponentName
+import android.content.ContentValues
+import android.content.Context
+import android.database.Cursor
+import android.net.Uri
+import android.os.Build
+import me.leolin.shortcutbadger.Badger
+import me.leolin.shortcutbadger.ShortcutBadgeException
+import me.leolin.shortcutbadger.util.CloseHelper.close
 
 /**
  * @author Leo Lin
  */
-public class SamsungHomeBadger implements Badger {
-    private static final String CONTENT_URI = "content://com.sec.badge/apps?notify=true";
-    private static final String[] CONTENT_PROJECTION = new String[]{"_id", "class"};
+class SamsungHomeBadger : Badger {
+    private var defaultBadger: DefaultBadger? = null
 
-    private DefaultBadger defaultBadger;
-
-    public SamsungHomeBadger() {
+    init {
         if (Build.VERSION.SDK_INT >= 21) {
-            defaultBadger = new DefaultBadger();
+            defaultBadger = DefaultBadger()
         }
     }
 
-    @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
-        if (defaultBadger != null && defaultBadger.isSupported(context)) {
-            defaultBadger.executeBadge(context, componentName, badgeCount);
+    @Throws(ShortcutBadgeException::class)
+    override fun executeBadge(context: Context, componentName: ComponentName, badgeCount: Int) {
+        if (defaultBadger != null && defaultBadger!!.isSupported(context)) {
+            defaultBadger!!.executeBadge(context, componentName, badgeCount)
         } else {
-            Uri mUri = Uri.parse(CONTENT_URI);
-            ContentResolver contentResolver = context.getContentResolver();
-            Cursor cursor = null;
+            val mUri = Uri.parse(CONTENT_URI)
+            val contentResolver = context.contentResolver
+            var cursor: Cursor? = null
             try {
-                cursor = contentResolver.query(mUri, CONTENT_PROJECTION, "package=?", new String[]{componentName.getPackageName()}, null);
+                cursor = contentResolver.query(
+                    mUri,
+                    CONTENT_PROJECTION,
+                    "package=?",
+                    arrayOf(componentName.packageName),
+                    null
+                )
                 if (cursor != null) {
-                    String entryActivityName = componentName.getClassName();
-                    boolean entryActivityExist = false;
+                    val entryActivityName = componentName.className
+                    var entryActivityExist = false
                     while (cursor.moveToNext()) {
-                        int id = cursor.getInt(0);
-                        ContentValues contentValues = getContentValues(componentName, badgeCount, false);
-                        contentResolver.update(mUri, contentValues, "_id=?", new String[]{String.valueOf(id)});
-                        if (entryActivityName.equals(cursor.getString(cursor.getColumnIndex("class")))) {
-                            entryActivityExist = true;
+                        val id = cursor.getInt(0)
+                        val contentValues = getContentValues(componentName, badgeCount, false)
+                        contentResolver.update(mUri, contentValues, "_id=?", arrayOf(id.toString()))
+                        if (entryActivityName == cursor.getString(cursor.getColumnIndex("class"))) {
+                            entryActivityExist = true
                         }
                     }
 
                     if (!entryActivityExist) {
-                        ContentValues contentValues = getContentValues(componentName, badgeCount, true);
-                        contentResolver.insert(mUri, contentValues);
+                        val contentValues = getContentValues(componentName, badgeCount, true)
+                        contentResolver.insert(mUri, contentValues)
                     }
                 }
             } finally {
-                CloseHelper.close(cursor);
+                close(cursor)
             }
         }
     }
 
-    private ContentValues getContentValues(ComponentName componentName, int badgeCount, boolean isInsert) {
-        ContentValues contentValues = new ContentValues();
+    private fun getContentValues(
+        componentName: ComponentName,
+        badgeCount: Int,
+        isInsert: Boolean
+    ): ContentValues {
+        val contentValues = ContentValues()
         if (isInsert) {
-            contentValues.put("package", componentName.getPackageName());
-            contentValues.put("class", componentName.getClassName());
+            contentValues.put("package", componentName.packageName)
+            contentValues.put("class", componentName.className)
         }
 
-        contentValues.put("badgecount", badgeCount);
+        contentValues.put("badgecount", badgeCount)
 
-        return contentValues;
+        return contentValues
     }
 
-    @Override
-    public List<String> getSupportLaunchers() {
-        return Arrays.asList(
-                "com.sec.android.app.launcher",
-                "com.sec.android.app.twlauncher"
-        );
+    override val supportLaunchers: List<String>
+        get() = mutableListOf(
+            "com.sec.android.app.launcher",
+            "com.sec.android.app.twlauncher"
+        )
+
+    companion object {
+        private const val CONTENT_URI = "content://com.sec.badge/apps?notify=true"
+        private val CONTENT_PROJECTION = arrayOf("_id", "class")
     }
 }

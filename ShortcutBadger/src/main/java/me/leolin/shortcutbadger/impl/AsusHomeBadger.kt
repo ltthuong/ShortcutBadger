@@ -1,84 +1,63 @@
-package me.leolin.shortcutbadger.impl;
+package me.leolin.shortcutbadger.impl
 
-import android.annotation.TargetApi;
-import android.content.AsyncQueryHandler;
-import android.content.ComponentName;
-import android.content.ContentValues;
-import android.content.Context;
-import android.content.Intent;
-import android.content.pm.ProviderInfo;
-import android.net.Uri;
-import android.os.Build;
-import android.os.Looper;
-
-import java.util.Arrays;
-import java.util.List;
-
-import me.leolin.shortcutbadger.Badger;
-import me.leolin.shortcutbadger.ShortcutBadgeException;
-import me.leolin.shortcutbadger.util.BroadcastHelper;
+import android.annotation.TargetApi
+import android.content.AsyncQueryHandler
+import android.content.ComponentName
+import android.content.ContentValues
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.Looper
+import me.leolin.shortcutbadger.Badger
+import me.leolin.shortcutbadger.ShortcutBadgeException
+import me.leolin.shortcutbadger.util.BroadcastHelper.sendDefaultIntentExplicitly
 
 /**
  * @author leolin
  */
-public class AsusHomeBadger implements Badger {
-    private static final String INTENT_ACTION = IntentConstants.DEFAULT_INTENT_ACTION;
-    private static final String INTENT_EXTRA_BADGE_COUNT = "badge_count";
-    private static final String INTENT_EXTRA_PACKAGENAME = "badge_count_package_name";
-    private static final String INTENT_EXTRA_ACTIVITY_NAME = "badge_count_class_name";
+class AsusHomeBadger : Badger {
+    private val BADGE_CONTENT_URI: Uri = Uri.parse(PROVIDER_CONTENT_URI)
 
-    private static final String PROVIDER_CONTENT_URI = "content://com.android.badge/"; // FIXME
-    private static final String PROVIDER_COLUMNS_BADGE_COUNT = "badge_count"; // FIXME
-    private static final String PROVIDER_COLUMNS_PACKAGE_NAME = "package_name"; // FIXME
-    private static final String PROVIDER_COLUMNS_ACTIVITY_NAME = "activity_name"; // FIXME
-    private static final String ASUS_LAUNCHER_PROVIDER_NAME = "com.android.badge";
-    private final Uri BADGE_CONTENT_URI = Uri.parse(PROVIDER_CONTENT_URI);
+    private var mQueryHandler: AsyncQueryHandler? = null
 
-    private AsyncQueryHandler mQueryHandler;
-
-    // It seems that Asus handle Sony like badges better than old implementation...
-    private static final String SONY_INTENT_ACTION = "com.sonyericsson.home.action.UPDATE_BADGE";
-    private static final String SONY_INTENT_EXTRA_PACKAGE_NAME = "com.sonyericsson.home.intent.extra.badge.PACKAGE_NAME";
-    private static final String SONY_INTENT_EXTRA_ACTIVITY_NAME = "com.sonyericsson.home.intent.extra.badge.ACTIVITY_NAME";
-    private static final String SONY_INTENT_EXTRA_MESSAGE = "com.sonyericsson.home.intent.extra.badge.MESSAGE";
-    private static final String SONY_INTENT_EXTRA_SHOW_MESSAGE = "com.sonyericsson.home.intent.extra.badge.SHOW_MESSAGE";
-
-
-    @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
+    @Throws(ShortcutBadgeException::class)
+    override fun executeBadge(context: Context, componentName: ComponentName, badgeCount: Int) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             // FIXME: It seems that ZenUI (com.asus.launcher) declares a content provider for badges but without documentation it is hard to guess how to add badges with it. Current draft implementation gives "No yet implemented" exception.
 //            if (asusBadgeContentProviderExists(context)) {
 //                executeBadgeByContentProvider(context, componentName, badgeCount);
 //            } else {
-                executeBadgeByBroadcast(context, componentName, badgeCount);
-//            }
+            executeBadgeByBroadcast(context, componentName, badgeCount)
+            //            }
         } else {
-            Intent intent = new Intent(INTENT_ACTION);
-            intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount);
-            intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.getPackageName());
-            intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
-            intent.putExtra("badge_vip_count", 0);
+            val intent = Intent(INTENT_ACTION)
+            intent.putExtra(INTENT_EXTRA_BADGE_COUNT, badgeCount)
+            intent.putExtra(INTENT_EXTRA_PACKAGENAME, componentName.packageName)
+            intent.putExtra(INTENT_EXTRA_ACTIVITY_NAME, componentName.className)
+            intent.putExtra("badge_vip_count", 0)
 
-            BroadcastHelper.sendDefaultIntentExplicitly(context, intent);
+            sendDefaultIntentExplicitly(context, intent)
         }
     }
 
-    private void executeBadgeByBroadcast(Context context, ComponentName componentName, int badgeCount) {
-        Intent intent = new Intent(SONY_INTENT_ACTION);
-        intent.putExtra(SONY_INTENT_EXTRA_PACKAGE_NAME, componentName.getPackageName());
-        intent.putExtra(SONY_INTENT_EXTRA_ACTIVITY_NAME, componentName.getClassName());
-        intent.putExtra(SONY_INTENT_EXTRA_MESSAGE, String.valueOf(badgeCount));
-        intent.putExtra(SONY_INTENT_EXTRA_SHOW_MESSAGE, badgeCount > 0);
+    private fun executeBadgeByBroadcast(
+        context: Context,
+        componentName: ComponentName,
+        badgeCount: Int
+    ) {
+        val intent = Intent(SONY_INTENT_ACTION)
+        intent.putExtra(SONY_INTENT_EXTRA_PACKAGE_NAME, componentName.packageName)
+        intent.putExtra(SONY_INTENT_EXTRA_ACTIVITY_NAME, componentName.className)
+        intent.putExtra(SONY_INTENT_EXTRA_MESSAGE, badgeCount.toString())
+        intent.putExtra(SONY_INTENT_EXTRA_SHOW_MESSAGE, badgeCount > 0)
         // FIXME: BroadcastHelper fail to resolve broadcast and then don't broadcast intent while it works.
 //         BroadcastHelper.sendDefaultIntentExplicitly(context, intent);
-        context.sendBroadcast(intent);
+        context.sendBroadcast(intent)
     }
 
-    @Override
-    public List<String> getSupportLaunchers() {
-        return Arrays.asList("com.asus.launcher");
-    }
+    override val supportLaunchers: List<String>
+        get() = mutableListOf("com.asus.launcher")
 
     /**
      * Send request to Asus badge content provider to set badge in Sony home launcher.
@@ -88,27 +67,30 @@ public class AsusHomeBadger implements Badger {
      * @param badgeCount    the badge count
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    private void executeBadgeByContentProvider(Context context, ComponentName componentName,
-                                               int badgeCount) {
+    private fun executeBadgeByContentProvider(
+        context: Context, componentName: ComponentName,
+        badgeCount: Int
+    ) {
         if (badgeCount < 0) {
-            return;
+            return
         }
 
-        final ContentValues contentValues = createContentValues(badgeCount, componentName);
+        val contentValues = createContentValues(badgeCount, componentName)
         if (Looper.myLooper() == Looper.getMainLooper()) {
             // We're in the main thread. Let's ensure the badge update happens in a background
             // thread by using an AsyncQueryHandler and an async update.
             if (mQueryHandler == null) {
-                mQueryHandler = new AsyncQueryHandler(
-                        context.getApplicationContext().getContentResolver()) {
-                };
+                mQueryHandler = object : AsyncQueryHandler(
+                    context.applicationContext.contentResolver
+                ) {
+                }
             }
-            insertBadgeAsync(contentValues);
+            insertBadgeAsync(contentValues)
         } else {
             // Already in a background thread. Let's update the badge synchronously. Otherwise,
             // if we use the AsyncQueryHandler, this thread may already be dead by the time the
             // async execution finishes, which will lead to an IllegalStateException.
-            insertBadgeSync(context, contentValues);
+            insertBadgeSync(context, contentValues)
         }
     }
 
@@ -117,8 +99,8 @@ public class AsusHomeBadger implements Badger {
      *
      * @param contentValues Content values containing the badge count, package and activity names
      */
-    private void insertBadgeAsync(final ContentValues contentValues) {
-        mQueryHandler.startInsert(0, null, BADGE_CONTENT_URI, contentValues);
+    private fun insertBadgeAsync(contentValues: ContentValues) {
+        mQueryHandler!!.startInsert(0, null, BADGE_CONTENT_URI, contentValues)
     }
 
     /**
@@ -127,9 +109,9 @@ public class AsusHomeBadger implements Badger {
      * @param context       Caller context
      * @param contentValues Content values containing the badge count, package and activity names
      */
-    private void insertBadgeSync(final Context context, final ContentValues contentValues) {
-        context.getApplicationContext().getContentResolver()
-                .insert(BADGE_CONTENT_URI, contentValues);
+    private fun insertBadgeSync(context: Context, contentValues: ContentValues) {
+        context.applicationContext.contentResolver
+            .insert(BADGE_CONTENT_URI, contentValues)
     }
 
     /**
@@ -146,27 +128,54 @@ public class AsusHomeBadger implements Badger {
      * @param badgeCount    the badge count
      * @param componentName the component name from which package and class name will be extracted
      */
-    private ContentValues createContentValues(final int badgeCount,
-                                              final ComponentName componentName) {
-        final ContentValues contentValues = new ContentValues();
-        contentValues.put(PROVIDER_COLUMNS_BADGE_COUNT, badgeCount);
-        contentValues.put(PROVIDER_COLUMNS_PACKAGE_NAME, componentName.getPackageName());
-        contentValues.put(PROVIDER_COLUMNS_ACTIVITY_NAME, componentName.getClassName());
-        return contentValues;
+    private fun createContentValues(
+        badgeCount: Int,
+        componentName: ComponentName
+    ): ContentValues {
+        val contentValues = ContentValues()
+        contentValues.put(PROVIDER_COLUMNS_BADGE_COUNT, badgeCount)
+        contentValues.put(PROVIDER_COLUMNS_PACKAGE_NAME, componentName.packageName)
+        contentValues.put(PROVIDER_COLUMNS_ACTIVITY_NAME, componentName.className)
+        return contentValues
     }
 
-    /**
-     * Check if the latest Asus badge content provider exists.
-     *
-     * @param context the context to use
-     * @return true if Asus badge content provider exists, otherwise false.
-     */
-    private static boolean asusBadgeContentProviderExists(Context context) {
-        boolean exists = false;
-        ProviderInfo info = context.getPackageManager().resolveContentProvider(ASUS_LAUNCHER_PROVIDER_NAME, 0);
-        if (info != null) {
-            exists = true;
+    companion object {
+        private val INTENT_ACTION: String = IntentConstants.Companion.DEFAULT_INTENT_ACTION
+        private const val INTENT_EXTRA_BADGE_COUNT = "badge_count"
+        private const val INTENT_EXTRA_PACKAGENAME = "badge_count_package_name"
+        private const val INTENT_EXTRA_ACTIVITY_NAME = "badge_count_class_name"
+
+        private const val PROVIDER_CONTENT_URI = "content://com.android.badge/" // FIXME
+        private const val PROVIDER_COLUMNS_BADGE_COUNT = "badge_count" // FIXME
+        private const val PROVIDER_COLUMNS_PACKAGE_NAME = "package_name" // FIXME
+        private const val PROVIDER_COLUMNS_ACTIVITY_NAME = "activity_name" // FIXME
+        private const val ASUS_LAUNCHER_PROVIDER_NAME = "com.android.badge"
+
+        // It seems that Asus handle Sony like badges better than old implementation...
+        private const val SONY_INTENT_ACTION = "com.sonyericsson.home.action.UPDATE_BADGE"
+        private const val SONY_INTENT_EXTRA_PACKAGE_NAME =
+            "com.sonyericsson.home.intent.extra.badge.PACKAGE_NAME"
+        private const val SONY_INTENT_EXTRA_ACTIVITY_NAME =
+            "com.sonyericsson.home.intent.extra.badge.ACTIVITY_NAME"
+        private const val SONY_INTENT_EXTRA_MESSAGE =
+            "com.sonyericsson.home.intent.extra.badge.MESSAGE"
+        private const val SONY_INTENT_EXTRA_SHOW_MESSAGE =
+            "com.sonyericsson.home.intent.extra.badge.SHOW_MESSAGE"
+
+
+        /**
+         * Check if the latest Asus badge content provider exists.
+         *
+         * @param context the context to use
+         * @return true if Asus badge content provider exists, otherwise false.
+         */
+        private fun asusBadgeContentProviderExists(context: Context): Boolean {
+            var exists = false
+            val info = context.packageManager.resolveContentProvider(ASUS_LAUNCHER_PROVIDER_NAME, 0)
+            if (info != null) {
+                exists = true
+            }
+            return exists
         }
-        return exists;
     }
 }

@@ -1,6 +1,8 @@
-package me.leolin.shortcutbadger.impl;
+package me.leolin.shortcutbadger.impl
 
-public interface IntentConstants {
-    String DEFAULT_INTENT_ACTION = "android.intent.action.BADGE_COUNT_UPDATE";
-    String DEFAULT_OREO_INTENT_ACTION = "me.leolin.shortcutbadger.BADGE_COUNT_UPDATE";
+interface IntentConstants {
+    companion object {
+        const val DEFAULT_INTENT_ACTION: String = "android.intent.action.BADGE_COUNT_UPDATE"
+        const val DEFAULT_OREO_INTENT_ACTION: String = "me.leolin.shortcutbadger.BADGE_COUNT_UPDATE"
+    }
 }

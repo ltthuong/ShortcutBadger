@@ -1,12 +1,7 @@
-package me.leolin.shortcutbadger;
+package me.leolin.shortcutbadger
 
-public class ShortcutBadgeException extends Exception {
-    public ShortcutBadgeException(String message) {
-        super(message);
-    }
+class ShortcutBadgeException : Exception {
+    constructor(message: String?) : super(message)
 
-    public ShortcutBadgeException(String message, Exception e) {
-        super(message, e);
-    }
-
+    constructor(message: String?, e: Exception?) : super(message, e)
 }

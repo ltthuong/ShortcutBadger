@@ -1,38 +1,33 @@
-package me.leolin.shortcutbadger.impl;
+package me.leolin.shortcutbadger.impl
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-
-import java.util.Arrays;
-import java.util.List;
-
-import me.leolin.shortcutbadger.Badger;
-import me.leolin.shortcutbadger.ShortcutBadgeException;
-import me.leolin.shortcutbadger.util.BroadcastHelper;
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import me.leolin.shortcutbadger.Badger
+import me.leolin.shortcutbadger.ShortcutBadgeException
+import me.leolin.shortcutbadger.util.BroadcastHelper.sendIntentExplicitly
 
 /**
  * @author Gernot Pansy
  */
-public class ApexHomeBadger implements Badger {
+class ApexHomeBadger : Badger {
+    @Throws(ShortcutBadgeException::class)
+    override fun executeBadge(context: Context, componentName: ComponentName, badgeCount: Int) {
+        val intent = Intent(INTENT_UPDATE_COUNTER)
+        intent.putExtra(PACKAGENAME, componentName.packageName)
+        intent.putExtra(COUNT, badgeCount)
+        intent.putExtra(CLASS, componentName.className)
 
-    private static final String INTENT_UPDATE_COUNTER = "com.anddoes.launcher.COUNTER_CHANGED";
-    private static final String PACKAGENAME = "package";
-    private static final String COUNT = "count";
-    private static final String CLASS = "class";
-
-    @Override
-    public void executeBadge(Context context, ComponentName componentName, int badgeCount) throws ShortcutBadgeException {
-        Intent intent = new Intent(INTENT_UPDATE_COUNTER);
-        intent.putExtra(PACKAGENAME, componentName.getPackageName());
-        intent.putExtra(COUNT, badgeCount);
-        intent.putExtra(CLASS, componentName.getClassName());
-
-        BroadcastHelper.sendIntentExplicitly(context, intent);
+        sendIntentExplicitly(context, intent)
     }
 
-    @Override
-    public List<String> getSupportLaunchers() {
-        return Arrays.asList("com.anddoes.launcher");
+    override val supportLaunchers: List<String>
+        get() = mutableListOf("com.anddoes.launcher")
+
+    companion object {
+        private const val INTENT_UPDATE_COUNTER = "com.anddoes.launcher.COUNTER_CHANGED"
+        private const val PACKAGENAME = "package"
+        private const val COUNT = "count"
+        private const val CLASS = "class"
     }
 }
