@@ -13,7 +13,7 @@ import me.leolin.shortcutbadger.impl.IntentConstants
 object BroadcastHelper {
     fun resolveBroadcast(context: Context, intent: Intent?): List<ResolveInfo> {
         val packageManager = context.packageManager
-        val receivers = packageManager.queryBroadcastReceivers(intent, 0)
+        val receivers = packageManager.queryBroadcastReceivers(intent!!, 0)
 
         return receivers ?: emptyList()
     }

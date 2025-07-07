@@ -1,9 +1,10 @@
 apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
 
 android {
-
+    namespace 'me.leolin.shortcutbadger'
     compileSdkVersion 36
-    buildToolsVersion '27.0.3'
 
     defaultConfig {
         minSdkVersion 14
@@ -17,8 +18,16 @@ android {
         abortOnError false
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+kotlin {
+    jvmToolchain(8)
 }
 
 //apply from: 'https://raw.github.com/chrisbanes/gradle-mvn-push/master/gradle-mvn-push.gradle'
 //apply from: './mvn-push.gradle'
-apply plugin: 'org.jetbrains.kotlin.android'
+

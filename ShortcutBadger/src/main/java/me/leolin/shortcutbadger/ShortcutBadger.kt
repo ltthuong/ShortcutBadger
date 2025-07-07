@@ -219,7 +219,7 @@ object ShortcutBadger {
         //Turns out framework does not guarantee to put DEFAULT Activity on top of the list.
         val resolveInfoDefault =
             context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        validateInfoList(resolveInfoDefault, resolveInfos)
+        validateInfoList(resolveInfoDefault!!, resolveInfos!!)
 
         for (resolveInfo in resolveInfos) {
             val currentHomePackage = resolveInfo.activityInfo.packageName
