@@ -37,7 +37,7 @@ import me.leolin.shortcutbadger.impl.ZukHomeBadger;
  */
 public final class ShortcutBadger {
 
-    private static final String LOG_TAG = "ShortcutBadger";
+    private static final String LOG_TAG = "BadgeModule";
     private static final int SUPPORTED_CHECK_ATTEMPTS = 3;
 
     private static final List<Class<? extends Badger>> BADGERS = new LinkedList<Class<? extends Badger>>();
@@ -81,7 +81,7 @@ public final class ShortcutBadger {
             if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                 Log.d(LOG_TAG, "Unable to execute badge", e);
             }
-            Log.d("BadgeModule", "Unable to execute badge $e");
+            Log.d("BadgeModule", "Unable to execute badge", e);
             return false;
         }
     }
@@ -176,6 +176,8 @@ public final class ShortcutBadger {
      * @param badgeCount
      */
     public static void applyNotification(Context context, Notification notification, int badgeCount) {
+        Log.d("BadgeModule", "applyNotification called with badgeCount: " + badgeCount);
+        Log.d("BadgeModule", "Build.MANUFACTURER: " + Build.MANUFACTURER);
         if (Build.MANUFACTURER.equalsIgnoreCase("Xiaomi")) {
             try {
                 Field field = notification.getClass().getDeclaredField("extraNotification");
@@ -186,7 +188,7 @@ public final class ShortcutBadger {
                 if (Log.isLoggable(LOG_TAG, Log.DEBUG)) {
                     Log.d(LOG_TAG, "Unable to execute badge", e);
                 }
-                Log.d("BadgeModule", "Unable to execute badge $e");
+                Log.d("BadgeModule", "Unable to execute badge", e);
             }
         }
     }
